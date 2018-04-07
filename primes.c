@@ -16,6 +16,8 @@ static unsigned long * counters;
 static int * nums; //sizeof(nums) = upper_bound + 1
 static int pos = 2;
 
+static unsigned long long timestamps[3];
+
 #define THREADS_RUNNING 0
 #define THREADS_DONE 1
 atomic_t progress; 
@@ -29,7 +31,17 @@ static int run(void * counter);
 static void my_barrier(int which);
 static void sieve(unsigned long * counter); 
 
+
+unsigned long long get_time(void) {
+	struct timespec* ts; 
+    unsigned long long ns; 
+    getnstimeofday(ts);
+    ns = (unsigned long long) timespec_to_ns(ts);
+	return ns;
+}
+
 static int primes_init(void) {
+	timestamps[0] = get_time();
 	if( num_threads < 1 || upper_bound < 2) {
 		printk(KERN_ERR "Num_threads must be at least 1, upper_bound at least 2\n");
 		counters = NULL;
@@ -56,7 +68,7 @@ static int primes_init(void) {
 	for(i = 0; i < num_threads; ++i) {
 		counters[i] = 0;
 	}
-	for(i = 0; i <= upper_bound+1; ++i) {
+	for(i = 0; i < upper_bound+1; ++i) {
 		nums[i] = i;
 	}
 	atomic_set(&progress, THREADS_RUNNING);
@@ -85,13 +97,17 @@ static int run(void * counter) {
 static void my_barrier(int which) {
 	printk(KERN_DEBUG "start barrier %d\n", which);
 	if(which == 1) {
-		atomic_dec(&my_barrier_1);
+		if( !atomic_sub_return(1, &my_barrier_1) ) {
+			timestamps[1] = get_time();
+		}
 		while( atomic_read(&my_barrier_1) ) {
 			//No need to call schedule, this one won't take long	
 		}
 	}
 	else {
-		atomic_dec(&my_barrier_2);
+		if( !atomic_sub_return(1, &my_barrier_2) ) {
+			timestamps[2] = get_time();
+		}
 		while( atomic_read(&my_barrier_2) ){
 		//TODO: call schedule() here?
 		}
@@ -141,17 +157,18 @@ static void primes_exit(void) {
 	if(atomic_read(&progress) != THREADS_DONE) {
 		printk(KERN_ERR "Threads not finished on exit!\n");
 	}	
-	for(i = 2; i <= upper_bound+1; ++i) {
+	for(i = 2; i < upper_bound+1; ++i) {
 		if( nums[i] != 0 ) {
 			printk("%d\n", i);
 			num_primes++;
 		}
 	}
 	printk("Primes found: %d, Non-primes found: %lu\n",
-			 num_primes, upper_bound - num_primes);
+			 num_primes, upper_bound - num_primes - 1);
 	printk("upper_bound = %lu, num_threads = %lu\n", upper_bound, num_threads);
-	//TODO: timing
-	
+	printk("Setup time: %llu, processing time: %llu\n", 
+			timestamps[1]-timestamps[0], timestamps[2]-timestamps[1]);
+
 	kfree(nums);
 	kfree(counters);
 }
