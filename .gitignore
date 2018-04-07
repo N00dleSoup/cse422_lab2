@@ -1,0 +1,6 @@
+log
+Module.symvers
+modules.order
+primes.*
+!primes.c
+.primes.*
