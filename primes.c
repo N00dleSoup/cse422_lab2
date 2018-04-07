@@ -41,7 +41,10 @@ unsigned long long get_time(void) {
 }
 
 static int primes_init(void) {
+	int i;
 	timestamps[0] = get_time();
+	atomic_set(&my_barrier_1, num_threads);
+	atomic_set(&my_barrier_2, num_threads);
 	if( num_threads < 1 || upper_bound < 2) {
 		printk(KERN_ERR "Num_threads must be at least 1, upper_bound at least 2\n");
 		counters = NULL;
@@ -64,7 +67,6 @@ static int primes_init(void) {
 		kfree(nums);
 		return -1;
 	}
-	int i;
 	for(i = 0; i < num_threads; ++i) {
 		counters[i] = 0;
 	}
@@ -72,12 +74,10 @@ static int primes_init(void) {
 		nums[i] = i;
 	}
 	atomic_set(&progress, THREADS_RUNNING);
-	atomic_set(&my_barrier_1, num_threads);
-	atomic_set(&my_barrier_2, num_threads);
-	//TODO: run
 	
-	kthread_run(run, counters, "sieve_proc");
-
+	for(i = 0; i < num_threads; ++i) {
+		kthread_run(run, counters + i, "sieve_proc_%d",i);
+	}
 	return 0;
 }
 
