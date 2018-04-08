@@ -4,3 +4,6 @@ modules.order
 primes.*
 !primes.c
 .primes.*
+atomic_primes.*
+!atomic_primes.c
+.atomic_primes.*
