@@ -23,8 +23,11 @@ static unsigned long long timestamps[3];
 #define DEBUG 0
 
 atomic_t progress; 
-atomic_t my_barrier_1;
-atomic_t my_barrier_2;
+
+static volatile int my_barrier_1;
+DEFINE_SPINLOCK(lock_barrier1);
+static volatile int my_barrier_2;
+DEFINE_SPINLOCK(lock_barrier2);
 
 DEFINE_SPINLOCK(pos_lock); 
 DEFINE_SPINLOCK(arr_lock);//Locks while crossing out
@@ -45,8 +48,8 @@ unsigned long long get_time(void) {
 static int primes_init(void) {
 	int i;
 	timestamps[0] = get_time();
-	atomic_set(&my_barrier_1, num_threads);
-	atomic_set(&my_barrier_2, num_threads);
+	my_barrier_1 = num_threads;
+	my_barrier_2 = num_threads;
 	if( num_threads < 1 || upper_bound < 2) {
 		printk(KERN_ERR "Num_threads must be at least 1, upper_bound at least 2\n");
 		counters = NULL;
@@ -99,19 +102,26 @@ static int run(void * counter) {
 static void my_barrier(int which) {
 	printk(KERN_DEBUG "start barrier %d\n", which);
 	if(which == 1) {
-		if( !atomic_sub_return(1, &my_barrier_1) ) {
+		spin_lock(&lock_barrier1);
+		my_barrier_1 -= 1;
+		//If this is the last thread to get here, update timestamps
+		if(my_barrier_1 == 0) {
 			timestamps[1] = get_time();
 		}
-		while( atomic_read(&my_barrier_1) ) {
-			schedule();	
+		spin_unlock(&lock_barrier1);
+		while ( my_barrier_1 != 0 ) {
+			schedule();
 		}
 	}
-	else {
-		if( !atomic_sub_return(1, &my_barrier_2) ) {
+	else if(which == 2) {
+		spin_lock(&lock_barrier2);
+		my_barrier_2 -= 1;
+		if(my_barrier_2 == 0) {
 			timestamps[2] = get_time();
 		}
-		while( atomic_read(&my_barrier_2) ){
-		   schedule();
+		spin_unlock(&lock_barrier2);
+		while(my_barrier_1 != 0) {
+			schedule();
 		}
 	}
 	printk(KERN_DEBUG "End barrier %d\n", which);
@@ -136,6 +146,7 @@ static void sieve(unsigned long * counter) {
 			printk(KERN_DEBUG "Crossed out %d\n", i);
 			(*counter) += 1;
 		}
+		schedule();
 	}
 	printk(KERN_DEBUG "end sieve with counter %d\n", counter - counters);
 }

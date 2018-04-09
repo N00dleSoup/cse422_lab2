@@ -159,6 +159,7 @@ static void sieve(unsigned long * counter) {
 			(*counter) += 1;
 		}
 		spin_unlock(&arr_lock);
+		schedule();
 	}
 	printk(KERN_DEBUG "end sieve with counter %d\n", counter - counters);
 }
