@@ -1,5 +1,5 @@
 # TODO: Change this to the location of your kernel source code
-KERNEL_SOURCE=/tmp/compile/pgardner/linux_source/linux
+KERNEL_SOURCE=/tmp/compile/nathan.jarvis/linux_source/linux
 
 obj-m := primes.o atomic_primes.o
 

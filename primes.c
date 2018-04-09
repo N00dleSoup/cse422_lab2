@@ -20,6 +20,8 @@ static unsigned long long timestamps[3];
 
 #define THREADS_RUNNING 0
 #define THREADS_DONE 1
+#define DEBUG 0;
+
 atomic_t progress; 
 atomic_t my_barrier_1;
 atomic_t my_barrier_2;
@@ -33,7 +35,7 @@ static void sieve(unsigned long * counter);
 
 
 unsigned long long get_time(void) {
-	struct timespec* ts; 
+    struct timespec* ts; 
     unsigned long long ns; 
     getnstimeofday(ts);
     ns = (unsigned long long) timespec_to_ns(ts);
@@ -101,23 +103,23 @@ static void my_barrier(int which) {
 			timestamps[1] = get_time();
 		}
 		while( atomic_read(&my_barrier_1) ) {
-			//No need to call schedule, this one won't take long	
-		}
+		   schedule();
+                }
 	}
 	else {
 		if( !atomic_sub_return(1, &my_barrier_2) ) {
 			timestamps[2] = get_time();
 		}
 		while( atomic_read(&my_barrier_2) ){
-		//TODO: call schedule() here?
+		   schedule();
 		}
 	}
 	printk(KERN_DEBUG "End barrier %d\n", which);
 } 
 
 static void sieve(unsigned long * counter) {
-	printk(KERN_DEBUG "start sieve with counter %d\n", counter - counters);
 	int myPos, i;
+	printk(KERN_DEBUG "start sieve with counter %d\n", counter - counters);
 	while(1) {
 		spin_lock(&pos_lock);
 		if(pos > upper_bound) {
@@ -141,7 +143,7 @@ static void sieve(unsigned long * counter) {
 		spin_lock(&arr_lock);
 		for(i = 2*myPos; i <= upper_bound; i += myPos) {
 			nums[i] = 0;
-			//printk(KERN_DEBUG "Crossed out %d\n", i);
+			printk(KERN_DEBUG "Crossed out %d\n", i);
 			(*counter) += 1;
 		}
 		spin_unlock(&arr_lock);
@@ -158,11 +160,14 @@ static void primes_exit(void) {
 	}	
 	for(i = 2; i < upper_bound+1; ++i) {
 		if( nums[i] != 0 ) {
-			printk("%d\n", i);
+			printk(", %d", i);
 			num_primes++;
+                       if(num_primes % 8 == 0){
+                          printk("\n");
+                       }
 		}
 	}
-	printk("Primes found: %d, Non-primes found: %lu\n",
+	printk("\nPrimes found: %d, Non-primes found: %lu\n",
 			 num_primes, upper_bound - num_primes);
 	for(i = 0; i < num_threads; ++i) {
 		printk("Thread %d crossed out %lu non-primes\n", i, counters[i]);
@@ -171,7 +176,6 @@ static void primes_exit(void) {
 	printk("upper_bound = %lu, num_threads = %lu\n", upper_bound, num_threads);
 	printk("Setup time: %llu, processing time: %llu\n", 
 			timestamps[1]-timestamps[0], timestamps[2]-timestamps[1]);
-
 	kfree(nums);
 	kfree(counters);
 }
