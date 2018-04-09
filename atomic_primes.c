@@ -152,8 +152,9 @@ static void sieve(unsigned long * counter) {
 }
 
 static void primes_exit(void) {
-	int i, num_primes;
+	int i, num_primes, cross_outs;
 	num_primes = 0;
+	cross_outs = 0;
 	printk(KERN_DEBUG "Start exit func\n");
 	if(atomic_read(&progress) != THREADS_DONE) {
 		printk(KERN_ERR "Threads not finished on exit!\n");
@@ -170,8 +171,11 @@ static void primes_exit(void) {
 	printk("\nPrimes found: %d, Non-primes found: %lu\n",
 			 num_primes, upper_bound - num_primes);
 	for(i = 0; i < num_threads; ++i) {
+		cross_outs += counters[i];
 		printk("Thread %d crossed out %lu non-primes\n", i, counters[i]);
 	}
+	printk("There were %lu extra cross-outs/n", 
+			cross_outs - (upper_bound - num_primes) );
 
 	printk("upper_bound = %lu, num_threads = %lu\n", upper_bound, num_threads);
 	printk("Setup time: %llu, processing time: %llu\n", 
