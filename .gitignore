@@ -8,3 +8,5 @@ primes.*
 atomic_primes.*
 !atomic_primes.c
 .atomic_primes.*
+!sundaram.c
+.sunsaram.*
