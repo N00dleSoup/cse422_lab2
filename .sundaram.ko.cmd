@@ -1,1 +1,0 @@
-cmd_/tmp/compile/nathan.jarvis/linux_source/kernel_modules/lab2/sundaram.ko := arm-linux-gnueabihf-ld -EL -r  -T ./scripts/module-common.lds --build-id  -o /tmp/compile/nathan.jarvis/linux_source/kernel_modules/lab2/sundaram.ko /tmp/compile/nathan.jarvis/linux_source/kernel_modules/lab2/sundaram.o /tmp/compile/nathan.jarvis/linux_source/kernel_modules/lab2/sundaram.mod.o
