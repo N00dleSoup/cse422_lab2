@@ -187,7 +187,7 @@ static void primes_exit(void) {
 		cross_outs += counters[i];
 		printk("Thread %d crossed out %lu non-primes\n", i, counters[i]);
 	}
-	printk("There were %lu extra cross-outs/n", 
+	printk("There were %lu extra cross-outs\n", 
 			cross_outs - (upper_bound - num_primes) );
 	printk("upper_bound = %lu, num_threads = %lu\n", upper_bound, num_threads);
 	printk("Setup time: %llu, processing time: %llu\n", 

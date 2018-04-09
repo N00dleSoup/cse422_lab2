@@ -139,11 +139,11 @@ static void sieve(unsigned long * counter) {
 			return;
 		}
 	
-		printk(KERN_DEBUG "Crossing out multiples of %d\n", myPos);
+		//printk(KERN_DEBUG "Crossing out multiples of %d\n", myPos);
 	
 		for(i = 2*myPos; i <= upper_bound; i += myPos) {
 			atomic_set(&nums[i], 0);
-			printk(KERN_DEBUG "Crossed out %d\n", i);
+			//printk(KERN_DEBUG "Crossed out %d\n", i);
 			(*counter) += 1;
 		}
 		schedule();
@@ -174,7 +174,7 @@ static void primes_exit(void) {
 		cross_outs += counters[i];
 		printk("Thread %d crossed out %lu non-primes\n", i, counters[i]);
 	}
-	printk("There were %lu extra cross-outs/n", 
+	printk("There were %lu extra cross-outs\n", 
 			cross_outs - (upper_bound - num_primes) );
 
 	printk("upper_bound = %lu, num_threads = %lu\n", upper_bound, num_threads);
