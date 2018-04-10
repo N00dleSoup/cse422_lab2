@@ -14,8 +14,8 @@ module_param(upper_bound, ulong, 0644);
 
 static unsigned long * counters;
 static int * nums; //sizeof(nums) = upper_bound + 1
-static int pos = 1;
-static unsigned long ubNew = 0;
+static int pos = 2;
+
 static unsigned long long timestamps[3];
 
 #define THREADS_RUNNING 0
@@ -62,8 +62,7 @@ static int primes_init(void) {
 		return -1;
 	}
 	atomic_set(&progress, THREADS_RUNNING);
-        ubNew = (upper_bound - 2 ) / 2;
-	nums = kmalloc( (ubNew+1) * sizeof(int), GFP_KERNEL);
+	nums = kmalloc( (upper_bound+1) * sizeof(int), GFP_KERNEL);
 	if( !nums ) {
 		printk(KERN_ERR "kmalloc failed for nums\n");
 		return -1;
@@ -78,7 +77,7 @@ static int primes_init(void) {
 	for(i = 0; i < num_threads; ++i) {
 		counters[i] = 0;
 	}
-	for(i = 0; i < ubNew+1; ++i) {
+	for(i = 0; i < upper_bound+1; ++i) {
 		nums[i] = i;
 	}
 	atomic_set(&progress, THREADS_RUNNING);
@@ -131,18 +130,18 @@ static void my_barrier(int which) {
 } 
 
 static void sieve(unsigned long * counter) {
-	int myPos, i, temp;
+	int myPos, i;
 	//printk(KERN_DEBUG "start sieve with counter %d\n", counter - counters);
 	while(1) {
 		spin_lock(&pos_lock);
-		if(pos > ubNew) {
+		if(pos > upper_bound) {
 			spin_unlock(&pos_lock);
 			return;
 		}
-		while( nums[pos] == 0 && pos <= ubNew ) {
+		while( nums[pos] == 0 && pos <= upper_bound ) {
 			++pos;
 		}
-		if(pos > ubNew) {
+		if(pos > upper_bound) {
 			spin_unlock(&pos_lock);
 			return;
 		}
@@ -150,25 +149,9 @@ static void sieve(unsigned long * counter) {
 		myPos = pos;
 		++pos;
 		spin_unlock(&pos_lock);
-
-
-                i = myPos;
-                temp = i + myPos + 2 * (i * myPos);
-		spin_lock(&arr_lock);
- 
-                while( temp <= ubNew ){
-
-                   nums[temp] = 0;
-                   (*counter) += 1;
-                   ++i;
-                   //printk("I crossed out %d", 2*temp + 1);
-                   temp = i + myPos + 2 * (i * myPos);
-
-                }
-		spin_unlock(&arr_lock);
 	
 		//printk(KERN_DEBUG "Crossing out multiples of %d\n", myPos);
-	        /*
+	
 		spin_lock(&arr_lock);
 		for(i = 2*myPos; i <= upper_bound; i += myPos) {
 			nums[i] = 0;
@@ -176,39 +159,37 @@ static void sieve(unsigned long * counter) {
 			(*counter) += 1;
 		}
 		spin_unlock(&arr_lock);
-                */
 		schedule();
 	}
-	printk(KERN_DEBUG "end sieve with counter %d\n", counter - counters);
+	//printk(KERN_DEBUG "end sieve with counter %d\n", counter - counters);
 }
 
 static void primes_exit(void) {
 	int i, num_primes, cross_outs;
-	num_primes = 1;
+	num_primes = 0;
 	cross_outs = 0;
 	//printk(KERN_DEBUG "Start exit func\n");
 	if(atomic_read(&progress) != THREADS_DONE) {
-		printk(KERN_ERR "Threads not finished on exit!\n");
-	}
-        printk(", 2");
-	for(i = 1; i <= ubNew ; ++i) {
+		//printk(KERN_ERR "Threads not finished on exit!\n");
+	}	
+	for(i = 2; i < upper_bound+1; ++i) {
 		if( nums[i] != 0 ) {
-			printk(", %d", 2*i +1 );
+			//printk(", %d", i);
 			num_primes++;
                        if(num_primes % 8 == 0){
-                          printk("\n");
+                          ///printk("\n");
                        }
 		}
 	}
-	printk("\nPrimes found: %d, Non-primes found: %lu\n",
-			 num_primes, upper_bound - num_primes);
+	//printk("\nPrimes found: %d, Non-primes found: %lu\n",
+		//	 num_primes, upper_bound - num_primes);
 	for(i = 0; i < num_threads; ++i) {
 		cross_outs += counters[i];
+		//printk("Thread %d crossed out %lu non-primes\n", i, counters[i]);
 	}
-	printk("There were %lu extra cross-outs\n", 
-			cross_outs -  (ubNew+1 -  num_primes) );
-	printk("upper_bound = %lu, num_threads = %lu\n", upper_bound, num_threads);
-	printk("Setup time: %llu, processing time: %llu\n", 
+	printk("%lu,%lu", upper_bound, num_threads);
+	printk(",%lu", cross_outs - (upper_bound - num_primes) );
+	printk(",%llu,%llu\n", 
 			timestamps[1]-timestamps[0], timestamps[2]-timestamps[1]);
 	kfree(nums);
 	kfree(counters);

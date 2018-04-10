@@ -1,0 +1,1 @@
+cmd_/tmp/compile/nathan.jarvis/linux_source/kernel_modules/lab2/csv_primes.ko := arm-linux-gnueabihf-ld -EL -r  -T ./scripts/module-common.lds --build-id  -o /tmp/compile/nathan.jarvis/linux_source/kernel_modules/lab2/csv_primes.ko /tmp/compile/nathan.jarvis/linux_source/kernel_modules/lab2/csv_primes.o /tmp/compile/nathan.jarvis/linux_source/kernel_modules/lab2/csv_primes.mod.o

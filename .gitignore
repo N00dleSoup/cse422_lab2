@@ -8,5 +8,7 @@ primes.*
 atomic_primes.*
 !atomic_primes.c
 .atomic_primes.*
+sundaram.*
 !sundaram.c
-.sunsaram.*
+.sundaram.*
+diff.txt

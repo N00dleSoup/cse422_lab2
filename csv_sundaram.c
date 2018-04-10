@@ -190,25 +190,24 @@ static void primes_exit(void) {
 	if(atomic_read(&progress) != THREADS_DONE) {
 		printk(KERN_ERR "Threads not finished on exit!\n");
 	}
-        printk(", 2");
+        //printk(", 2");
 	for(i = 1; i <= ubNew ; ++i) {
 		if( nums[i] != 0 ) {
-			printk(", %d", 2*i +1 );
+			//printk(", %d", 2*i +1 );
 			num_primes++;
                        if(num_primes % 8 == 0){
-                          printk("\n");
+                          //printk("\n");
                        }
 		}
 	}
-	printk("\nPrimes found: %d, Non-primes found: %lu\n",
-			 num_primes, upper_bound - num_primes);
+	//printk("\nPrimes found: %d, Non-primes found: %lu\n",
+	//		 num_primes, upper_bound - num_primes);
 	for(i = 0; i < num_threads; ++i) {
 		cross_outs += counters[i];
 	}
-	printk("There were %lu extra cross-outs\n", 
-			cross_outs -  (ubNew+1 -  num_primes) );
-	printk("upper_bound = %lu, num_threads = %lu\n", upper_bound, num_threads);
-	printk("Setup time: %llu, processing time: %llu\n", 
+	printk("%lu,%lu", upper_bound, num_threads);
+	printk(",%lu", cross_outs -  (ubNew+1 -  num_primes) );
+	printk(",%llu,%llu\n", 
 			timestamps[1]-timestamps[0], timestamps[2]-timestamps[1]);
 	kfree(nums);
 	kfree(counters);
