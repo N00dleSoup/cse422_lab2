@@ -81,6 +81,7 @@ static int primes_init(void) {
 	atomic_set(&progress, THREADS_RUNNING);
 	
 	for(i = 0; i < num_threads; ++i) {
+		//Pass an index into counters[] to each thread
 		kthread_run(run, counters + i, "sieve_proc_%d",i);
 	}
 	return 0;
@@ -95,8 +96,8 @@ static int run(void * counter) {
 	return 0;
 }
 
-//Atomic ints originally set to num_threads
-//Each call to this function decreases the 
+//my_barrier_1 and 2 originally set to num_threads
+//Each call to this function atomically decreases the 
 //count by one, until it reaches zero 
 //and all threads are freed to move on
 static void my_barrier(int which) {
